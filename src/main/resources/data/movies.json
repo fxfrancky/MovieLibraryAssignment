@@ -1,4 +1,4 @@
-[ {
+ [{
   "title" : "Ocean's 8",
   "director" : "Gary Ross",
   "releaseDate" : "13/06/2018",
@@ -15,7 +15,7 @@
   "type" : "Comedy"
 }, {
   "title" : "Avengers: Infinite War",
-  "director" : "Anthony Russo, Joe Russo",
+  "director" : "Anthony Russo",
   "releaseDate" : "25/04/2018",
   "type" : "action"
 }, {
@@ -48,4 +48,5 @@
   "director" : "Peter Clinton",
   "releaseDate" : "29/10/2014",
   "type" : "action"
-} ]
+} 
+]

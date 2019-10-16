@@ -2,17 +2,23 @@ package com.assignment.movielibrary.model;
 
 import java.util.Date;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Movie {
 
+	@NotNull
 	private String title;
+	@NotNull
 	private String director;
 	@DateTimeFormat(pattern = "dd/MM/yyyy")
 	@JsonFormat(pattern="dd/MM/yyyy")
+	@NotNull
 	private Date releaseDate;
+	@NotNull
 	private String type;
 	
 	public String getTitle() {
