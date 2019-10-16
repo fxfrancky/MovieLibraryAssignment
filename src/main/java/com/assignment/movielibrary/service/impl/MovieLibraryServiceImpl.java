@@ -1,47 +1,46 @@
 package com.assignment.movielibrary.service.impl;
 
-import java.io.File;
 import java.io.InputStream;
-import java.net.URL;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
 import com.assignment.movielibrary.model.Movie;
 import com.assignment.movielibrary.service.MovieLibraryService;
+import com.assignment.movielibrary.utils.LocalDateDeserializer;
+import com.assignment.movielibrary.utils.LocalDateSerializer;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Component
-@PropertySource({ "classpath:data/movies.json" })
 public class MovieLibraryServiceImpl implements MovieLibraryService{
 	
 	Logger logger = LoggerFactory.getLogger(MovieLibraryServiceImpl.class);
 
-	private final String jsonFileUrl= "/data/movies.json";
+	private final String jsonFileUrl= "/movies.json";
+	Resource resourceJSon = new ClassPathResource("movies.json");
 	
-	@Autowired
-	private ResourceLoader resourceLoader;
 
 	@Override
 	public List<Movie> findAllMovies() throws Exception {
 		
 		List<Movie> movies=new ArrayList<Movie>();
 		try {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
+			ObjectMapper mapper = serializingObjectMapper();
 			TypeReference<List<Movie>> typeReference = new TypeReference<List<Movie>>() {};
 			InputStream inputStream = TypeReference.class.getResourceAsStream(jsonFileUrl);
+			mapper.registerModule(new JavaTimeModule());
 			movies = mapper.readValue(inputStream,typeReference); 
 		} catch (Exception e) {
 			throw new Exception("An error occured when retrieving AllMovies " +e.getMessage());
@@ -62,14 +61,11 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 	public Movie addMovie(Movie movie) throws Exception {
 
 		try {
-			ObjectMapper objectMapper = new ObjectMapper();
-			objectMapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
-			// configure objectMapper for pretty input
-			objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-			
+			ObjectMapper objectMapper = serializingObjectMapper();
+			List<Movie> movies = findAllMovies();
+			movies.add(movie);
 			// write customerObj object to movies.json file
-			Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
-			objectMapper.writeValue(fileRes.getFile(), movie);
+			objectMapper.writeValue(resourceJSon.getFile(), movies);
 			return movie;
 		} catch (Exception e) {
 			throw new Exception("An error occured when adding a movie addMovie " + e.getMessage());
@@ -81,19 +77,13 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 		
 		Movie mv = findMovieByTitle(movie.getTitle());
 		try {
-			 ObjectMapper objectMapper = new ObjectMapper();
-			 objectMapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
-			 objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+			 ObjectMapper objectMapper = serializingObjectMapper();
 			 mv.setReleaseDate(movie.getReleaseDate());
 			 mv.setType(movie.getType());
 		     mv.setDirector(movie.getDirector());
-		    // URL fileUrl = getClass().getResource(jsonFileUrl);
-				// write customerObj object to movies.json file
-			// objectMapper.writeValue(new File(fileUrl.getFile()), movie);
-			 
-			 Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
-				objectMapper.writeValue(fileRes.getFile(), movie);
-			 //objectMapper.writeValue(new File(jsonFileUrl), movie);
+		     List<Movie> movies = findAllMovies();
+				movies.add(mv);
+			 objectMapper.writeValue(resourceJSon.getFile(), movies);
 	 } catch (Exception e) {
 		throw new Exception("An error occured when adding a movie addMovie " + e.getMessage());
 	 }
@@ -106,21 +96,10 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 
 		try {
 			List<Movie> movies = findAllMovies();
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
-
-			for (Movie mv : findAllMovies()) {
-				if (mv.getTitle().equals(title)) {
-					movies.remove(mv);
-				}
-			}
-			//URL fileUrl = getClass().getResource(jsonFileUrl);
-			// write customerObj object to movies.json file
-			//mapper.writeValue(new File(fileUrl.getFile()), movies);
-			//mapper.writeValue(new File(jsonFileUrl), movies);
+			ObjectMapper mapper = serializingObjectMapper();
+			List<Movie> cleanMovies = movies.stream().filter(p ->!p.getTitle().equals(title)).collect(Collectors.toList());
 			
-			Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
-			mapper.writeValue(fileRes.getFile(), movies);
+			mapper.writeValue(resourceJSon.getFile(), cleanMovies);
 		} catch (Exception e) {
 			throw new Exception("An error occured when deleting a movie deleteMovie " + e.getMessage());
 		}
@@ -137,5 +116,18 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 		}
 		return directorMovies;
 	}
+	
+	public ObjectMapper serializingObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+    	objectMapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
+		// configure objectMapper for pretty input
+		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer());
+        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer());
+        objectMapper.registerModule(javaTimeModule);
+        return objectMapper;
+    }
 
 }

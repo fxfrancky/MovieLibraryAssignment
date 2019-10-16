@@ -1,6 +1,6 @@
 package com.assignment.movielibrary.model;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import javax.validation.constraints.NotNull;
 
@@ -10,15 +10,15 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Movie {
 
-	@NotNull
+	@NotNull(message = "This field cant be empty")
 	private String title;
-	@NotNull
+	@NotNull(message = "This field cant be empty")
 	private String director;
+	@NotNull(message = "This field cant be empty")
+	@JsonFormat(pattern = "dd/MM/yyyy")
 	@DateTimeFormat(pattern = "dd/MM/yyyy")
-	@JsonFormat(pattern="dd/MM/yyyy")
-	@NotNull
-	private Date releaseDate;
-	@NotNull
+	private LocalDate releaseDate;
+	@NotNull(message = "This field cant be empty")
 	private String type;
 	
 	public String getTitle() {
@@ -34,14 +34,15 @@ public class Movie {
 	public void setDirector(String director) {
 		this.director = director;
 	}
-	public Date getReleaseDate() {
-		return releaseDate;
-	}
-	public void setReleaseDate(Date releaseDate) {
-		this.releaseDate = releaseDate;
-	}
+
 	public String getType() {
 		return type;
+	}
+	public LocalDate getReleaseDate() {
+		return releaseDate;
+	}
+	public void setReleaseDate(LocalDate releaseDate) {
+		this.releaseDate = releaseDate;
 	}
 	public void setType(String type) {
 		this.type = type;

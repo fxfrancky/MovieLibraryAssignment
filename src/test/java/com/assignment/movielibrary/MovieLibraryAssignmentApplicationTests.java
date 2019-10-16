@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -11,11 +13,14 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -25,6 +30,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.HttpClientErrorException;
 
 import com.assignment.movielibrary.model.Movie;
+import com.assignment.movielibrary.service.impl.MovieLibraryServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -34,11 +40,19 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 @SpringBootTest(classes = MovieLibraryAssignmentApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MovieLibraryAssignmentApplicationTests {
 	
+	Logger logger = LoggerFactory.getLogger(MovieLibraryAssignmentApplicationTests.class);
+	
 	File moviesFile;
+	File moviesTestFile;
+	Resource resource = new ClassPathResource("moviestest.json");
 
 	@Before
 	public void setUp() {
-		moviesFile = new File("src/test/resources/moviestest.json");
+		try {
+			moviesFile = resource.getFile();
+		} catch (IOException e) {
+			logger.error("Fichier non trouvé : "+e.getMessage());
+		}
 	}
 	
 	/**
@@ -53,7 +67,8 @@ public class MovieLibraryAssignmentApplicationTests {
 		mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 		TypeReference<List<Movie>> typeReference = new TypeReference<List<Movie>>() {};
 		movies =mapper.readValue(moviesFile, typeReference);
-		mapper.writeValue(new File("src/main/resources/data/movies.json"), movies);
+		moviesTestFile = new File("src/main/resources/movies.json");
+		mapper.writeValue(moviesTestFile, movies);
 	}
 
 
@@ -93,7 +108,7 @@ public class MovieLibraryAssignmentApplicationTests {
 	   Movie movie = new Movie();
 	   movie.setTitle("The revenge");
 	   movie.setDirector("Peter Schuman");
-	   movie.setReleaseDate(new Date());
+	   movie.setReleaseDate(LocalDate.now());
 	   movie.setType("action");
       
        ResponseEntity<Movie> postResponse = restTemplate.postForEntity(getRootUrl() + "/movies", movie, Movie.class);
@@ -106,7 +121,7 @@ public class MovieLibraryAssignmentApplicationTests {
        String title = "The revenge";
        Movie movie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);
        movie.setDirector("Peter Clinton");
-	   movie.setReleaseDate(new Date());
+	   movie.setReleaseDate(LocalDate.now());
 	   movie.setType("action");
        restTemplate.put(getRootUrl() + "/movies/" + title, movie);
        Movie updatedMovie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);

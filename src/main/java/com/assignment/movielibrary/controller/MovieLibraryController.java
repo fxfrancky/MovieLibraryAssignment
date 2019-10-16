@@ -39,9 +39,9 @@ public class MovieLibraryController {
 
 	 @PostMapping("/add")
 	    public String addMovie(@Valid Movie movie, BindingResult result, Model model) throws Exception {
-//	        if (result.hasErrors()) {
-//	            return "add-movie";
-//	        }
+	        if (result.hasErrors()) {
+	            return "add-movie";
+	        }
 	        movieLibraryService.addMovie(movie);
 	        return "redirect:list";
 	    }
