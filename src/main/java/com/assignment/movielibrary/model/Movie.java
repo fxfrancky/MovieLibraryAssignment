@@ -1,12 +1,18 @@
 package com.assignment.movielibrary.model;
 
-import java.util.Set;
+import java.util.Date;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Movie {
 
 	private String title;
-	private Set<Director> directors;
-	private String releaseDate;
+	private String director;
+	@DateTimeFormat(pattern = "dd/MM/yyyy")
+	@JsonFormat(pattern="dd/MM/yyyy")
+	private Date releaseDate;
 	private String type;
 	
 	public String getTitle() {
@@ -16,16 +22,16 @@ public class Movie {
 		this.title = title;
 	}
 	
-	public Set<Director> getDirectors() {
-		return directors;
+	public String getDirector() {
+		return director;
 	}
-	public void setDirectors(Set<Director> directors) {
-		this.directors = directors;
+	public void setDirector(String director) {
+		this.director = director;
 	}
-	public String getReleaseDate() {
+	public Date getReleaseDate() {
 		return releaseDate;
 	}
-	public void setReleaseDate(String releaseDate) {
+	public void setReleaseDate(Date releaseDate) {
 		this.releaseDate = releaseDate;
 	}
 	public String getType() {
@@ -37,7 +43,7 @@ public class Movie {
 	
 	@Override
 	public String toString() {
-		return "Movie [title=" + title + ", directors=" + directors + ", releaseDate=" + releaseDate + ", type=" + type
+		return "Movie [title=" + title + ", directors=" + director + ", releaseDate=" + releaseDate + ", type=" + type
 				+ "]";
 	}
 	

@@ -11,7 +11,7 @@ public interface MovieLibraryService {
 	 * Get All Movies
 	 * @return
 	 */
-	public List<Movie> getAllMovies()throws Exception;
+	public List<Movie> findAllMovies() throws Exception;
 	
 	/**
 	 * Get a movie by title
@@ -19,7 +19,7 @@ public interface MovieLibraryService {
 	 * @return
 	 * @throws Exception 
 	 */
-	public Movie getMovieByTitle(String title) throws Exception;
+	public Movie findMovieByTitle(String title) throws Exception;
 	
 	/**
 	 * Add a movie
@@ -47,7 +47,7 @@ public interface MovieLibraryService {
 	 * @param director
 	 * @return
 	 */
-	public List<String> getAllMoviesTitleForADirector(Director director) throws Exception;
+	public List<String> findAllMoviesTitleForADirector(String director) throws Exception;
 	
 	
 	
