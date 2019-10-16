@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 @Component
+@PropertySource({ "classpath:data/movies.json" })
 public class MovieLibraryServiceImpl implements MovieLibraryService{
 	
 	Logger logger = LoggerFactory.getLogger(MovieLibraryServiceImpl.class);
@@ -66,7 +68,7 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 			objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 			
 			// write customerObj object to movies.json file
-			Resource fileRes = resourceLoader.getResource("classpath:data/movies.json");
+			Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
 			objectMapper.writeValue(fileRes.getFile(), movie);
 			return movie;
 		} catch (Exception e) {
@@ -89,7 +91,7 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 				// write customerObj object to movies.json file
 			// objectMapper.writeValue(new File(fileUrl.getFile()), movie);
 			 
-			 Resource fileRes = resourceLoader.getResource("classpath:data/movies.json");
+			 Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
 				objectMapper.writeValue(fileRes.getFile(), movie);
 			 //objectMapper.writeValue(new File(jsonFileUrl), movie);
 	 } catch (Exception e) {
@@ -117,7 +119,7 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 			//mapper.writeValue(new File(fileUrl.getFile()), movies);
 			//mapper.writeValue(new File(jsonFileUrl), movies);
 			
-			Resource fileRes = resourceLoader.getResource("classpath:data/movies.json");
+			Resource fileRes = resourceLoader.getResource("classpath:*movies.json");
 			mapper.writeValue(fileRes.getFile(), movies);
 		} catch (Exception e) {
 			throw new Exception("An error occured when deleting a movie deleteMovie " + e.getMessage());
