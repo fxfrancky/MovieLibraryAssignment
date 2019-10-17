@@ -2,12 +2,12 @@ package com.assignment.movielibrary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.junit.Before;
@@ -17,23 +17,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.client.HttpClientErrorException;
 
 import com.assignment.movielibrary.model.Movie;
-import com.assignment.movielibrary.service.impl.MovieLibraryServiceImpl;
+import com.assignment.movielibrary.service.MovieLibraryService;
+import com.assignment.movielibrary.utils.LocalDateDeserializer;
+import com.assignment.movielibrary.utils.LocalDateSerializer;
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 
 @RunWith(SpringRunner.class)
@@ -44,11 +41,16 @@ public class MovieLibraryAssignmentApplicationTests {
 	
 	File moviesFile;
 	File moviesTestFile;
-	Resource resource = new ClassPathResource("moviestest.json");
+	Resource resource = new ClassPathResource("movies.json");
+	Resource resourcetest = new ClassPathResource("moviestest.json");
+	
+	@Autowired
+	private MovieLibraryService movieLibraryService;
 
 	@Before
 	public void setUp() {
 		try {
+			moviesTestFile = resourcetest.getFile();
 			moviesFile = resource.getFile();
 		} catch (IOException e) {
 			logger.error("Fichier non trouvé : "+e.getMessage());
@@ -59,85 +61,102 @@ public class MovieLibraryAssignmentApplicationTests {
 	 * initialize the movie file
 	 * @throws Exception
 	 */
-	@Test
+	//@Test
 	public void initMoviesFile () throws Exception {
-	    assert(moviesFile.exists());
+	    assert(resource.exists());
 		List<Movie> movies=new ArrayList<Movie>();
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-		TypeReference<List<Movie>> typeReference = new TypeReference<List<Movie>>() {};
-		movies =mapper.readValue(moviesFile, typeReference);
-		moviesTestFile = new File("src/main/resources/movies.json");
-		mapper.writeValue(moviesTestFile, movies);
-	}
-
-
-	@Test
-	public void contextLoads() {
+		movies =initTestMovies();
+		ObjectMapper mapper = serializingObjectMapper();
+		mapper.writeValue(moviesFile, movies);
 	}
 	
-	@Autowired
-    private TestRestTemplate restTemplate;
-
-    @LocalServerPort
-    private int port;
-
-    private String getRootUrl() {
-        return "http://localhost:" + port;
-    }
+	public List<Movie> initTestMovies() throws Exception{
+		assert(resourcetest.exists());
+		List<Movie> movies=new ArrayList<Movie>();
+		ObjectMapper mapper = serializingObjectMapper();
+		mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+		TypeReference<List<Movie>> typeReference = new TypeReference<List<Movie>>() {};
+		movies =mapper.readValue(moviesTestFile, typeReference);
+		return movies;
+	}
 
    
     @Test
-    public void testGetAllMovies() {
-    HttpHeaders headers = new HttpHeaders();
-       HttpEntity<String> entity = new HttpEntity<String>(null, headers);
-       ResponseEntity<String> response = restTemplate.exchange(getRootUrl() + "/movies",
-       HttpMethod.GET, entity, String.class);  
-       assertNotNull(response.getBody());
+    public void testGetAllMovies() throws Exception {
+       initMoviesFile ();
+       List<Movie> movies = movieLibraryService.findAllMovies();
+       assertNotNull(movies);
+       assertEquals(10, movies.size());
+       for(Movie mv : movies) {
+    	  System.out.print(" ***Movie in the list  ** : " +mv.getTitle());
+       }
    }
 
    @Test
-   public void testGetMovieByTitle() {
-       Movie movie = restTemplate.getForObject(getRootUrl() + "/movies/Spiderman", Movie.class);
-       System.out.println(movie.getTitle());
-       assertNotNull(movie);
+   public void testGetMovieByTitle() throws Exception {
+	   initMoviesFile ();
+       Movie mv = movieLibraryService.findMovieByTitle("Spiderman");
+       assertNotNull(mv);
+       assertEquals("Spiderman", mv.getTitle());
+       assertEquals("Peter Clinton", mv.getDirector());
+       assertEquals("action", mv.getType());
    }
 
    @Test
-   public void testCreateMovie() {
+   public void testCreateMovie() throws Exception {
+	   initMoviesFile ();
 	   Movie movie = new Movie();
 	   movie.setTitle("The revenge");
 	   movie.setDirector("Peter Schuman");
 	   movie.setReleaseDate(LocalDate.now());
 	   movie.setType("action");
-      
-       ResponseEntity<Movie> postResponse = restTemplate.postForEntity(getRootUrl() + "/movies", movie, Movie.class);
-       assertNotNull(postResponse);
-       assertNotNull(postResponse.getBody());
+	   movieLibraryService.addMovie(movie);
+       Movie mv = movieLibraryService.findMovieByTitle("The revenge");
+       assertEquals("The revenge", mv.getTitle());
+       assertEquals("Peter Schuman", mv.getDirector());
+       assertEquals("action", mv.getType());
+       assertEquals(LocalDate.now(), mv.getReleaseDate());
    }
 
    @Test
-   public void testUpdateMovie() {
-       String title = "The revenge";
-       Movie movie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);
+   public void testUpdateMovie() throws Exception {
+	   initMoviesFile ();
+       String title = "John Wick";
+       Movie movie = movieLibraryService.findMovieByTitle(title);
        movie.setDirector("Peter Clinton");
 	   movie.setReleaseDate(LocalDate.now());
-	   movie.setType("action");
-       restTemplate.put(getRootUrl() + "/movies/" + title, movie);
-       Movie updatedMovie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);
-       assertNotNull(updatedMovie);
+	   movie.setType("Horror");
+      
+       Movie mv = movieLibraryService.updateMovie(movie);
+       assertEquals("John Wick", mv.getTitle());
+       assertEquals("Peter Clinton", mv.getDirector());
+       assertEquals("Horror", mv.getType());
+       assertEquals(LocalDate.now(), mv.getReleaseDate());
+       
    }
 
    @Test
-   public void testDeleteMovie() {
+   public void testDeleteMovie() throws Exception {
+	   initMoviesFile ();
 	    String title = "Spiderman";
-	    Movie movie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);
+	    Movie movie = movieLibraryService.findMovieByTitle(title);
         assertNotNull(movie);
-        restTemplate.delete(getRootUrl() + "/movies/" + title);
-        try {
-             movie = restTemplate.getForObject(getRootUrl() + "/movies/" + title, Movie.class);
-        } catch (final HttpClientErrorException e) {
-             assertEquals(e.getStatusCode(), HttpStatus.NOT_FOUND);
-        }
+      
+         movieLibraryService.deleteMovie(title);
+         Movie mv = movieLibraryService.findMovieByTitle(title);
+         assertNull(mv);
    }
+   
+	public ObjectMapper serializingObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+    	objectMapper.configure(Feature.AUTO_CLOSE_SOURCE, true);
+		// configure objectMapper for pretty input
+		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer());
+        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer());
+        objectMapper.registerModule(javaTimeModule);
+        return objectMapper;
+    }
 }
