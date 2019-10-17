@@ -75,7 +75,7 @@ public class MovieLibraryController {
             return "update-movie";
         }
 
-        movieLibraryService.addMovie(movie);
+        movieLibraryService.updateMovie(movie);
         model.addAttribute("movies", movieLibraryService.findAllMovies());
         return "index";
     }
