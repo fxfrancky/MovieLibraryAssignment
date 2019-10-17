@@ -82,8 +82,9 @@ public class MovieLibraryServiceImpl implements MovieLibraryService{
 			 mv.setType(movie.getType());
 		     mv.setDirector(movie.getDirector());
 		     List<Movie> movies = findAllMovies();
-				movies.add(mv);
-			 objectMapper.writeValue(resourceJSon.getFile(), movies);
+		     List<Movie> cleanMovies = movies.stream().filter(p ->!p.getTitle().equals(mv.getTitle())).collect(Collectors.toList());
+		     cleanMovies.add(mv);
+			 objectMapper.writeValue(resourceJSon.getFile(), cleanMovies);
 	 } catch (Exception e) {
 		throw new Exception("An error occured when adding a movie addMovie " + e.getMessage());
 	 }
